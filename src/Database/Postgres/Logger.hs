@@ -1,15 +1,15 @@
-module Postgres.DBLogger where
+module Database.Postgres.Logger where
 
 import           Data.Text                      ( Text
                                                 , unpack
                                                 )
 
-class DBLogger m where
+class Logger m where
   logDebug :: Text -> m ()
   logInfo :: Text -> m ()
   logError :: Text -> m ()
 
-instance DBLogger IO where
+instance Logger IO where
   logDebug = putStrLn . unpack
   logInfo  = putStrLn . unpack
   logError = putStrLn . unpack

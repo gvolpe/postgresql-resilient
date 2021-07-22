@@ -12,11 +12,10 @@ build-type:          Simple
 extra-source-files:  CHANGELOG.md
 
 library
-  exposed-modules:     Postgres.DBLogger
-                     , Postgres.Pool
+  exposed-modules:     Database.Postgres.Logger
+                     , Database.Postgres.Pool
   build-depends:       base
                      , exceptions
-                     , managed
                      , postgresql-simple
                      , text
   hs-source-dirs:      src

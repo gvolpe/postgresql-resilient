@@ -3,10 +3,9 @@
 {-# LANGUAGE OverloadedStrings, RankNTypes #-}
 
 {- | Provides a way to acquire a Postgres connection pool with automatic reconnection. -}
-module Postgres.Pool
+module Database.Postgres.Pool
   ( ConnectionPool(..)
   , Seconds
-  , seconds
   , withConnectionPool
   , defaultSettings
   )
@@ -19,13 +18,13 @@ import           Control.Concurrent             ( forkIO
 import           Control.Concurrent.MVar
 import           Control.Monad                  ( forever )
 import           Control.Monad.Catch
+import           Database.Postgres.Logger
 import           Data.Functor                   ( void )
 import           Data.IORef
 import           Data.Maybe                     ( fromMaybe )
 import qualified Data.Text                     as T
 import qualified Database.PostgreSQL.Simple    as P
 import           GHC.IO.Exception
-import           Postgres.DBLogger
 import           Prelude                 hiding ( init )
 
 data DBConnectionError = DBConnectionError deriving (Exception, Show)
@@ -43,19 +42,14 @@ newtype Seconds = Seconds Int
   deriving Ord via Int
   deriving Num via Int
 
-seconds :: Int -> Maybe Seconds
-seconds n | n > 0     = Just $ Seconds n
-          | otherwise = Nothing
-
 data ReconnectSettings = ReconnectSettings
   { healthCheckEvery :: Seconds     -- How often to check the connection status.
   , exponentialThreshold :: Seconds -- After this threshold, stop the exponential back-off.
   } deriving Show
 
 defaultSettings :: ReconnectSettings
-defaultSettings = ReconnectSettings { healthCheckEvery     = Seconds 3
-                                    , exponentialThreshold = Seconds 10
-                                    }
+defaultSettings =
+  ReconnectSettings { healthCheckEvery = 3, exponentialThreshold = 10 }
 
 {- | Sleep for n amount of seconds -}
 sleep :: Seconds -> IO ()
