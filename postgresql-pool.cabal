@@ -1,0 +1,24 @@
+cabal-version:       2.4
+
+name:                postgresql-pool
+version:             0.1.0.0
+synopsis:            PostgreSQL single connection pool with built-in reconnection, built on top of postgresql-simple.
+license:             Apache-2.0
+license-file:        LICENSE
+author:              Gabriel Volpe
+maintainer:          volpegabriel@gmail.com
+category:            Database
+build-type:          Simple
+extra-source-files:  CHANGELOG.md
+
+library
+  exposed-modules:     Postgres.DBLogger
+                     , Postgres.Pool
+  build-depends:       base
+                     , exceptions
+                     , managed
+                     , postgresql-simple
+                     , text
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall
