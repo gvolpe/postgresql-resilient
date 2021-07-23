@@ -24,12 +24,13 @@ Therefore, instead of using `connect` directly, you can leverage the following f
 withResilientConnection
   :: forall a
    . ReconnectSettings
+  -> LogHandler
   -> P.ConnectInfo
   -> (ResilientConnection IO -> IO a)
   -> IO a
 ```
 
-It's also worth mentioning that it only depends on the `exceptions` and `text` packages, in addition to `postgresql-simple`.
+Note: it only depends on `exceptions` and `postgresql-simple`, yielding a tiny footprint.
 
 ### Quick Start
 
@@ -37,9 +38,12 @@ It's also worth mentioning that it only depends on the `exceptions` and `text` p
 import           Database.PostgreSQL.Resilient
 import qualified Database.PostgreSQL.Simple    as P
 
-withResilientConnection defaultSettings connectInfo $ \pool ->
+withResilientConnection defaultSettings logHandler connectInfo $ \pool ->
   (conn :: P.Connection) <- getConnection pool
   doSomething conn
+
+logHandler :: String -> IO ()
+logHandler = putStrLn
 
 connectInfo :: P.ConnectInfo
 connectInfo = P.ConnectInfo
@@ -64,7 +68,7 @@ import           Control.Monad.Managed
 
 mkConnection :: Managed (ResilientConnection IO)
 mkConnection =
-  managed $ withResilientConnection defaultSettings connectInfo
+  managed $ withResilientConnection defaultSettings logHandler connectInfo
 
 main :: IO ()
 main = with mkConnection $ \pool ->
