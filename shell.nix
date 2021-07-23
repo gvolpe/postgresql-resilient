@@ -1,7 +1,7 @@
 let
   inherit (import nix/pkgs.nix {}) pkgs hp;
 
-  drv = hp.callCabal2nix "postgresql-pool" ./. {};
+  drv = hp.callCabal2nix "postgresql-resilient" ./. {};
 in
 {
   my_project = drv;
