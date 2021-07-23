@@ -1,4 +1,4 @@
-# Revision history for postgresql-pool
+# Revision history for postgresql-resilient
 
 ## 0.1.0.0 -- YYYY-mm-dd
 
