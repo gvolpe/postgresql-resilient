@@ -67,15 +67,12 @@ withResilientConnection
   -> (ResilientConnection IO -> IO a)
   -> IO a
 withResilientConnection settings info f = do
-  connRef <- newIORef Nothing
-  signal  <- newEmptyMVar
-  let pool = ResilientConnection
-        { getConnection = fromMaybe (error "Internal error")
-                            <$> readIORef connRef
-        , close         = readMVar signal >>= killThread
-        }
-  let init = acquire connRef >> keepAlive connRef pool >>= putMVar signal
-  bracket (pool <$ init) release f
+  ((,) <$> newIORef Nothing <*> newEmptyMVar) >>= \(connRef, signal) ->
+    let getConn   = fromMaybe (error "Internal error") <$> readIORef connRef
+        closeConn = readMVar signal >>= killThread
+        pool      = ResilientConnection getConn closeConn
+        init      = acquire connRef >> keepAlive connRef pool >>= putMVar signal
+    in  bracket (pool <$ init) release f
  where
   acquire ref = do
     logInfo "Acquiring PostgreSQL connection"
