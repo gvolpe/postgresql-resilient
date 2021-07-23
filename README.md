@@ -71,3 +71,64 @@ main = with mkConnection $ \pool ->
   (conn :: P.Connection) <- getConnection pool
   doSomething conn
 ```
+
+#### Reconnection
+
+Here are the logs of a simple connection example where the PostgreSQL server is shutdown on purpose and it's then brought back up a few seconds later.
+
+```
+$ cabal new-run postgresql-resilient-demo
+Up to date
+Acquiring PostgreSQL connection
+
+Checking PostgreSQL connection status
+[Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
+
+Checking PostgreSQL connection status
+[Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
+
+Checking PostgreSQL connection status
+Disposing of disconnected PostgreSQL connection
+Acquiring PostgreSQL connection
+libpq: failed (could not connect to server: Connection refused
+	Is the server running on host "localhost" (::1) and accepting
+	TCP/IP connections on port 5432?
+could not connect to server: Connection refused
+	Is the server running on host "localhost" (127.0.0.1) and accepting
+	TCP/IP connections on port 5432?
+)
+ > Retrying in Seconds 1 seconds.
+
+Acquiring PostgreSQL connection
+libpq: failed (could not connect to server: Connection refused
+	Is the server running on host "localhost" (::1) and accepting
+	TCP/IP connections on port 5432?
+could not connect to server: Connection refused
+	Is the server running on host "localhost" (127.0.0.1) and accepting
+	TCP/IP connections on port 5432?
+)
+ > Retrying in Seconds 2 seconds.
+
+Acquiring PostgreSQL connection
+libpq: failed (could not connect to server: Connection refused
+	Is the server running on host "localhost" (::1) and accepting
+	TCP/IP connections on port 5432?
+could not connect to server: Connection refused
+	Is the server running on host "localhost" (127.0.0.1) and accepting
+	TCP/IP connections on port 5432?
+)
+ > Retrying in Seconds 4 seconds.
+
+Acquiring PostgreSQL connection
+Checking PostgreSQL connection status
+[Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
+
+Checking PostgreSQL connection status
+[Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
+
+^CReleasing PostgreSQL connection
+Disposing of disconnected PostgreSQL connection
+Closing PostgreSQL connection pool
+```
+
+The health check is performed every 3 seconds by default but it is configurable via the `healthCheckEvery` setting. The retries are exponential by `^2` seconds with a threshold of 10 seconds, also configurable via `exponentialThreshold`.
