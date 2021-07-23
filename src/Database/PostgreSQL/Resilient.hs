@@ -56,7 +56,7 @@ import           Control.Monad                  ( forever )
 import           Control.Monad.Catch
 import           Data.IORef
 import           Data.Functor                   ( void )
-import           Data.Maybe                     ( fromMaybe )
+import           Data.Maybe                     ( fromJust )
 import qualified Database.PostgreSQL.Simple    as P
 import           GHC.IO.Exception
 import           Prelude                 hiding ( init )
@@ -111,10 +111,11 @@ withResilientConnection
   -> IO a
 withResilientConnection settings logger info f = do
   ((,) <$> newIORef Nothing <*> newEmptyMVar) >>= \(connRef, signal) ->
-    let getConn   = fromMaybe (error "Internal error") <$> readIORef connRef
+    let getConn   = fromJust <$> readIORef connRef
         closeConn = readMVar signal >>= killThread
         pool      = ResilientConnection getConn closeConn
-        init      = acquire connRef >> keepAlive connRef pool >>= putMVar signal
+        ka        = keepAlive (reconnect connRef) pool
+        init      = acquire connRef >> ka >>= putMVar signal
     in  bracket (pool <$ init) release f
  where
   acquire ref = do
@@ -133,23 +134,22 @@ withResilientConnection settings logger info f = do
     logger "Disposing of disconnected PostgreSQL connection"
     P.close conn
 
-  keepAlive ref pool = forkIO $ forever $ do
+  reconnect ref n = catch (void $ acquire ref) $ \(e :: SomeException) ->
+    logger (retries e) >> sleep n >> reconnect ref n'
+   where
+    retries e = show e <> "\n >>> Retrying in " <> show n <> " seconds."
+    t  = exponentialThreshold settings
+    n' = if n >= t then t else n * 2
+
+  keepAlive rec pool = forkIO $ forever $ do
     sleep $ healthCheckEvery settings
     logger "Checking PostgreSQL connection status"
-    let
-      reconnect n = do
-        let t  = exponentialThreshold settings
-        let n' = if n >= t then t else n * 2
-        catch (void $ acquire ref) $ \(e :: SomeException) ->
-          logger (retries e) >> sleep n >> reconnect n'
-       where
-        retries e = show e <> "\n > Retrying in " <> show n <> " seconds."
     conn <- getConnection pool
     catch
       (healthCheck logger conn)
       (\(e :: IOError) ->
         -- OtherError is thrown on every internal libpq error such as connection error
         if ioe_type e == ResourceVanished || ioe_type e == OtherError
-          then clean conn >> reconnect 1
+          then clean conn >> rec 1
           else logger (show e) >> throwM DBConnectionError
       )
