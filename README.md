@@ -1,15 +1,15 @@
-postgresql-pool
-===============
+postgresql-resilient
+====================
 
-[![CI Status](https://github.com/gvolpe/postgresql-pool/workflows/Haskell%20CI/badge.svg)](https://github.com/gvolpe/postgresql-pool/actions)
+[![CI Status](https://github.com/gvolpe/postgresql-resilient/workflows/Haskell%20CI/badge.svg)](https://github.com/gvolpe/postgresql-resilient/actions)
 
-PostgreSQL single-connection pool with reconnection support, built on top of [PostgreSQL Simple](https://hackage.haskell.org/package/postgresql-simple).
+PostgreSQL single-connection pool with automatic reconnection support, built on top of [PostgreSQL Simple](https://hackage.haskell.org/package/postgresql-simple).
 
 ```haskell
-import           Database.Postgres.Pool
+import           Database.Postgres.Resilient
 import qualified Database.PostgreSQL.Simple    as P
 
-withConnectionPool connectInfo defaultSettings $ \pool ->
+withResilientConnection connectInfo defaultSettings $ \pool ->
   (conn :: P.Connection) <- getConnection pool
   doSomething conn
 
@@ -27,4 +27,19 @@ defaultSettings = ReconnectSettings
   { healthCheckEvery     = 3
   , exponentialThreshold = 10
   }
+```
+
+E.g. using the [managed](https://hackage.haskell.org/package/managed) library for your resources.
+
+```haskell
+import           Control.Monad.Managed
+
+mkConnection :: Managed (ResilientConnection IO)
+mkConnection =
+  managed $ withResilientConnection connectInfo defaultSettings
+
+main :: IO ()
+main = with mkConnection $ \pool ->
+  (conn :: P.Connection) <- getConnection pool
+  doSomething conn
 ```

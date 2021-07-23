@@ -3,10 +3,10 @@
 {-# LANGUAGE OverloadedStrings, RankNTypes #-}
 
 {- | Provides a way to acquire a Postgres connection pool with automatic reconnection. -}
-module Database.Postgres.Pool
-  ( ConnectionPool(..)
+module Database.Postgres.Resilient
+  ( ResilientConnection(..)
   , Seconds
-  , withConnectionPool
+  , withResilientConnection
   , defaultSettings
   )
 where
@@ -30,7 +30,7 @@ import           Prelude                 hiding ( init )
 data DBConnectionError = DBConnectionError deriving (Exception, Show)
 
 {- | Single connection pool with built-in reconnection -}
-data ConnectionPool m = ConnectionPool
+data ResilientConnection m = ResilientConnection
   { getConnection :: m P.Connection
   , close :: m ()
   }
@@ -60,16 +60,16 @@ healthCheck conn = do
   (res :: [P.Only String]) <- P.query_ conn "SELECT version();"
   logInfo $ T.pack (show res)
 
-withConnectionPool
+withResilientConnection
   :: forall a
    . ReconnectSettings
   -> P.ConnectInfo
-  -> (ConnectionPool IO -> IO a)
+  -> (ResilientConnection IO -> IO a)
   -> IO a
-withConnectionPool settings info f = do
+withResilientConnection settings info f = do
   connRef <- newIORef Nothing
   signal  <- newEmptyMVar
-  let pool = ConnectionPool
+  let pool = ResilientConnection
         { getConnection = fromMaybe (error "Internal error")
                             <$> readIORef connRef
         , close         = readMVar signal >>= killThread
