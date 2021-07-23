@@ -131,7 +131,7 @@ Checking PostgreSQL connection status
 [Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
 
 ^CReleasing PostgreSQL connection
-Closing PostgreSQL connection pool
+Shutdown PostgreSQL re-connection process
 ```
 
 The health check is performed every 3 seconds by default but it is configurable via the `healthCheckEvery` setting. The retries are exponential by `^2` seconds with a threshold of 10 seconds, also configurable via `exponentialThreshold`.

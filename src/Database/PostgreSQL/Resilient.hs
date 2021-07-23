@@ -66,7 +66,6 @@ data DBConnectionError = DBConnectionError deriving (Exception, Show)
 {- | Single connection pool with built-in reconnection -}
 data ResilientConnection m = ResilientConnection
   { getConnection :: m P.Connection -- ^ Get the latest healthy connection.
-  , close :: m ()                   -- ^ Close the background process (already handled by `withResilientConnection`, not recommended to use).
   }
 
 type LogHandler = String -> IO ()
@@ -111,24 +110,23 @@ withResilientConnection
   -> IO a
 withResilientConnection settings logger info f = do
   ((,) <$> newIORef Nothing <*> newEmptyMVar) >>= \(connRef, signal) ->
-    let getConn   = fromJust <$> readIORef connRef
-        closeConn = readMVar signal >>= killThread
-        pool      = ResilientConnection getConn closeConn
-        ka        = keepAlive (reconnect connRef) pool
-        init      = acquire connRef >> ka >>= putMVar signal
-    in  bracket (pool <$ init) release f
+    let shutdown = readMVar signal >>= killThread -- ends keep-alive process
+        pool     = ResilientConnection (fromJust <$> readIORef connRef)
+        ka       = keepAlive (reconnect connRef) pool
+        init     = acquire connRef >> ka >>= putMVar signal
+    in  bracket (pool <$ init) (release shutdown) f
  where
   acquire ref = do
     logger "Acquiring PostgreSQL connection"
     conn <- P.connect info
     conn <$ atomicWriteIORef ref (Just conn)
 
-  release pool = do
+  release shutdown pool = do
     logger "Releasing PostgreSQL connection"
     conn <- getConnection pool
     P.close conn
-    logger "Closing PostgreSQL connection pool"
-    close pool
+    logger "Shutdown PostgreSQL re-connection process"
+    shutdown
 
   clean conn = do
     logger "Disposing of disconnected PostgreSQL connection"
