@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings, RankNTypes #-}
 
 {- | Provides a way to acquire a Postgres connection pool with automatic reconnection. -}
-module Database.Postgres.Resilient
+module Database.PostgreSQL.Resilient
   ( ResilientConnection(..)
   , Seconds
   , withResilientConnection
@@ -18,7 +18,7 @@ import           Control.Concurrent             ( forkIO
 import           Control.Concurrent.MVar
 import           Control.Monad                  ( forever )
 import           Control.Monad.Catch
-import           Database.Postgres.Logger
+import           Database.PostgreSQL.Logger
 import           Data.Functor                   ( void )
 import           Data.IORef
 import           Data.Maybe                     ( fromMaybe )

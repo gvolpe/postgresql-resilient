@@ -12,8 +12,8 @@ build-type:          Simple
 extra-source-files:  CHANGELOG.md
 
 library
-  exposed-modules:     Database.Postgres.Logger
-                     , Database.Postgres.Resilient
+  exposed-modules:     Database.PostgreSQL.Logger
+                     , Database.PostgreSQL.Resilient
   build-depends:       base
                      , exceptions
                      , postgresql-simple

@@ -1,4 +1,4 @@
-module Database.Postgres.Logger where
+module Database.PostgreSQL.Logger where
 
 import           Data.Text                      ( Text
                                                 , unpack
