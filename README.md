@@ -127,7 +127,6 @@ Checking PostgreSQL connection status
 [Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
 
 ^CReleasing PostgreSQL connection
-Disposing of disconnected PostgreSQL connection
 Closing PostgreSQL connection pool
 ```
 

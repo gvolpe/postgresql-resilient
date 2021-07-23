@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveAnyClass, DeriveGeneric, DerivingVia #-}
+{-# LANGUAGE DeriveAnyClass, DerivingVia #-}
 {-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings, RankNTypes #-}
 
@@ -85,7 +85,7 @@ withResilientConnection settings info f = do
   release pool = do
     logInfo "Releasing PostgreSQL connection"
     conn <- getConnection pool
-    clean conn
+    P.close conn
     logInfo "Closing PostgreSQL connection pool"
     close pool
 
