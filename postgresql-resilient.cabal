@@ -1,8 +1,8 @@
 cabal-version:       2.4
 
-name:                postgresql-pool
+name:                postgresql-resilient
 version:             0.1.0.0
-synopsis:            PostgreSQL single connection pool with built-in reconnection, built on top of postgresql-simple.
+synopsis:            PostgreSQL single-connection pool with automatic reconnection support, built on top of postgresql-simple.
 license:             Apache-2.0
 license-file:        LICENSE
 author:              Gabriel Volpe
