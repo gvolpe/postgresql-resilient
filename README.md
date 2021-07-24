@@ -23,7 +23,7 @@ Therefore, instead of using `connect`, you can leverage the following function.
 ```haskell
 withResilientConnection
   :: forall a
-   . ReconnectSettings
+   . ResilientSettings
   -> LogHandler
   -> P.ConnectInfo
   -> (ResilientConnection IO -> IO a)
@@ -38,9 +38,10 @@ Note: it only depends on `exceptions` and `postgresql-simple`, yielding a tiny f
 import           Database.PostgreSQL.Resilient
 import qualified Database.PostgreSQL.Simple    as P
 
-withResilientConnection defaultSettings logHandler connectInfo $ \pool ->
+withResilientConnection defaultResilientSettings logHandler connectInfo $ \pool ->
   (conn :: P.Connection) <- getConnection pool
-  doSomething conn
+  res <- P.query_ conn "SELECT * FROM foo"
+  putStrLn $ show res
 
 logHandler :: String -> IO ()
 logHandler = putStrLn
@@ -54,10 +55,10 @@ connectInfo = P.ConnectInfo
   , P.connectDatabase = "store"
   }
 
-defaultSettings :: ReconnectSettings
-defaultSettings = ReconnectSettings
-  { healthCheckEvery     = 3
-  , exponentialThreshold = 10
+defaultResilientSettings :: ResilientSettings
+defaultResilientSettings = ResilientSettings
+  { healthCheckEvery            = 3
+  , exponentialBackoffThreshold = 10
   }
 ```
 
@@ -67,8 +68,8 @@ E.g. using the [managed](https://hackage.haskell.org/package/managed) library fo
 import           Control.Monad.Managed
 
 mkConnection :: Managed (ResilientConnection IO)
-mkConnection =
-  managed $ withResilientConnection defaultSettings logHandler connectInfo
+mkConnection = managed $ withResilientConnection
+  defaultResilientSettings logHandler connectInfo
 
 main :: IO ()
 main = with mkConnection $ \pool ->
@@ -80,7 +81,7 @@ main = with mkConnection $ \pool ->
 
 Here are the logs of a simple connection example where the PostgreSQL server is shutdown on purpose and it's then brought back up a few seconds later.
 
-```
+```shell
 $ cabal new-run postgresql-resilient-demo
 Up to date
 Connecting to PostgreSQL

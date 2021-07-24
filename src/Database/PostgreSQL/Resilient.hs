@@ -15,9 +15,10 @@ The `withResilientConnection` function gives us a `ResilientConnection` from whi
 import           Database.PostgreSQL.Resilient
 import qualified Database.PostgreSQL.Simple    as P
 
-withResilientConnection defaultSettings logHandler connectInfo $ \pool ->
+withResilientConnection defaultResilientSettings logHandler connectInfo $ \pool ->
   (conn :: P.Connection) <- getConnection pool
-  doSomething conn
+  res <- P.query_ conn "SELECT * FROM foo"
+  putStrLn $ show res
 
 logHandler :: String -> IO ()
 logHandler = putStrLn
@@ -31,19 +32,19 @@ connectInfo = P.ConnectInfo
   , P.connectDatabase = "store"
   }
 
-defaultSettings :: ReconnectSettings
-defaultSettings = ReconnectSettings
+defaultResilientSettings :: ResilientSettings
+defaultResilientSettings = ResilientSettings
   { healthCheckEvery     = 3
-  , exponentialThreshold = 10
+  , exponentialBackoffThreshold = 10
   }
 @
 -}
 module Database.PostgreSQL.Resilient
   ( ResilientConnection(..)
-  , ReconnectSettings(..)
+  , ResilientSettings(..)
   , Seconds
   , withResilientConnection
-  , defaultSettings
+  , defaultResilientSettings
   )
 where
 
@@ -74,16 +75,16 @@ type LogHandler = String -> IO ()
 newtype Seconds = Seconds Int
   deriving (Eq, Num, Ord, Show) via Int
 
-{- | The reconnection settings -}
-data ReconnectSettings = ReconnectSettings
-  { healthCheckEvery :: Seconds     -- ^ How often to check the connection status.
-  , exponentialThreshold :: Seconds -- ^ After this threshold, stop the exponential back-off.
+{- | The resilient settings -}
+data ResilientSettings = ResilientSettings
+  { healthCheckEvery :: Seconds            -- ^ How often to check the connection status.
+  , exponentialBackoffThreshold :: Seconds -- ^ After this threshold, stop the exponential back-off.
   } deriving Show
 
-{- | Default reconnection settings -}
-defaultSettings :: ReconnectSettings
-defaultSettings =
-  ReconnectSettings { healthCheckEvery = 3, exponentialThreshold = 10 }
+{- | Default resilient settings -}
+defaultResilientSettings :: ResilientSettings
+defaultResilientSettings =
+  ResilientSettings { healthCheckEvery = 3, exponentialBackoffThreshold = 10 }
 
 {- | Sleep for n amount of seconds -}
 sleep :: Seconds -> IO ()
@@ -100,7 +101,7 @@ healthCheck logger conn = do
  - -}
 withResilientConnection
   :: forall a
-   . ReconnectSettings
+   . ResilientSettings
   -> LogHandler
   -> P.ConnectInfo
   -> (ResilientConnection IO -> IO a)
@@ -133,7 +134,7 @@ withResilientConnection settings logger info f = do
     logger (retries e) >> sleep n >> reconnect ref n'
    where
     retries e = show e <> "\n >>> Retrying in " <> show n <> " seconds."
-    t  = exponentialThreshold settings
+    t  = exponentialBackoffThreshold settings
     n' = if n >= t then t else n * 2
 
   keepAlive rec pool = forkIO $ forever $ do
