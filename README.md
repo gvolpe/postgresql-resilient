@@ -14,11 +14,11 @@ connect :: ConnectInfo -> IO Connection
 close :: Connection -> IO ()
 ```
 
-Once we acquire a `Connection`, it would work as long as there are no connectivity issues. However, if the PostgreSQL becomes unreachable even for a second, such `Connection` will no longer be valid and you will need to `close` it and try to `connect` again, which could also fail if the server is still down.
+Once we acquire a `Connection`, it would work as long as there are no connectivity issues. However, if the PostgreSQL server becomes unreachable even for a second, such `Connection` will no longer be valid and you will need to `close` it and try to `connect` again, which could also fail if the server is still down.
 
-So the tiny `postgresql-resilient` package provides a `ResilientConnection` from which we can always acquire the latest connection available. Re-connections with configurable retries and exponential back-offs as well as closing the connection once done using it (guaranteed by `bracket`) are handled for you too.
+So the tiny `postgresql-resilient` package provides a `ResilientConnection` from which we can always get a health connection. A background process will take care of check the connection status and re-connecting when necessary. All with configurable retries and exponential back-offs as well as closing the connection once done using it (guaranteed by `bracket`).
 
-Therefore, instead of using `connect` directly, you can leverage the following function.
+Therefore, instead of using `connect`, you can leverage the following function.
 
 ```haskell
 withResilientConnection
@@ -83,7 +83,7 @@ Here are the logs of a simple connection example where the PostgreSQL server is 
 ```
 $ cabal new-run postgresql-resilient-demo
 Up to date
-Acquiring PostgreSQL connection
+Connecting to PostgreSQL
 
 Checking PostgreSQL connection status
 [Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
@@ -92,8 +92,8 @@ Checking PostgreSQL connection status
 [Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
 
 Checking PostgreSQL connection status
-Disposing of disconnected PostgreSQL connection
-Acquiring PostgreSQL connection
+Closing no longer valid PostgreSQL connection
+Connecting to PostgreSQL
 libpq: failed (could not connect to server: Connection refused
 	Is the server running on host "localhost" (::1) and accepting
 	TCP/IP connections on port 5432?
@@ -101,9 +101,9 @@ could not connect to server: Connection refused
 	Is the server running on host "localhost" (127.0.0.1) and accepting
 	TCP/IP connections on port 5432?
 )
- > Retrying in Seconds 1 seconds.
+ > Retrying in 1 seconds.
 
-Acquiring PostgreSQL connection
+Connecting to PostgreSQL
 libpq: failed (could not connect to server: Connection refused
 	Is the server running on host "localhost" (::1) and accepting
 	TCP/IP connections on port 5432?
@@ -111,9 +111,9 @@ could not connect to server: Connection refused
 	Is the server running on host "localhost" (127.0.0.1) and accepting
 	TCP/IP connections on port 5432?
 )
- > Retrying in Seconds 2 seconds.
+ > Retrying in 2 seconds.
 
-Acquiring PostgreSQL connection
+Connecting to PostgreSQL
 libpq: failed (could not connect to server: Connection refused
 	Is the server running on host "localhost" (::1) and accepting
 	TCP/IP connections on port 5432?
@@ -121,16 +121,16 @@ could not connect to server: Connection refused
 	Is the server running on host "localhost" (127.0.0.1) and accepting
 	TCP/IP connections on port 5432?
 )
- > Retrying in Seconds 4 seconds.
+ > Retrying in 4 seconds.
 
-Acquiring PostgreSQL connection
+Connecting to PostgreSQL
 Checking PostgreSQL connection status
 [Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
 
 Checking PostgreSQL connection status
 [Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
 
-^CReleasing PostgreSQL connection
+^CClosing PostgreSQL connection
 Shutdown PostgreSQL re-connection process
 ```
 

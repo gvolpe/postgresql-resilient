@@ -72,10 +72,7 @@ type LogHandler = String -> IO ()
 
 {- | Represents amount of seconds -}
 newtype Seconds = Seconds Int
-  deriving stock Show
-  deriving Eq via Int
-  deriving Ord via Int
-  deriving Num via Int
+  deriving (Eq, Num, Ord, Show) via Int
 
 {- | The reconnection settings -}
 data ReconnectSettings = ReconnectSettings
@@ -117,19 +114,19 @@ withResilientConnection settings logger info f = do
     in  bracket (pool <$ init) (release shutdown) f
  where
   acquire ref = do
-    logger "Acquiring PostgreSQL connection"
+    logger "Connecting to PostgreSQL"
     conn <- P.connect info
     conn <$ atomicWriteIORef ref (Just conn)
 
   release shutdown pool = do
-    logger "Releasing PostgreSQL connection"
+    logger "Closing PostgreSQL connection"
     conn <- getConnection pool
     P.close conn
     logger "Shutdown PostgreSQL re-connection process"
     shutdown
 
   clean conn = do
-    logger "Disposing of disconnected PostgreSQL connection"
+    logger "Closing no longer valid PostgreSQL connection"
     P.close conn
 
   reconnect ref n = catch (void $ acquire ref) $ \(e :: SomeException) ->
