@@ -3,7 +3,7 @@ postgresql-resilient
 
 [![CI Status](https://github.com/gvolpe/postgresql-resilient/workflows/Haskell%20CI/badge.svg)](https://github.com/gvolpe/postgresql-resilient/actions)
 
-Automatic re-connection support for PostgreSQL, built on top of [postgresql-simple](https://hackage.haskell.org/package/postgresql-simple).
+Automatic reconnection support for PostgreSQL, built on top of [postgresql-simple](https://hackage.haskell.org/package/postgresql-simple).
 
 ### Motivation
 
@@ -16,7 +16,7 @@ close :: Connection -> IO ()
 
 Once we acquire a `Connection`, it would work as long as there are no connectivity issues. However, if the PostgreSQL server becomes unreachable even for a second, such `Connection` will no longer be valid and you will need to `close` it and try to `connect` again, which could also fail if the server is still down.
 
-So the tiny `postgresql-resilient` package provides a `ResilientConnection` from which we can always get a health connection. A background process will take care of check the connection status and re-connecting when necessary. All with configurable retries and exponential back-offs as well as closing the connection once done using it (guaranteed by `bracket`).
+So the tiny `postgresql-resilient` package provides a `ResilientConnection` from which we can always get a healthy connection. A background process will take care of checking the connection status and reconnecting when necessary. All with configurable retries and exponential back-offs as well as closing the connection once done using it (guaranteed by `bracket`).
 
 Therefore, instead of using `connect`, you can leverage the following function.
 
@@ -132,7 +132,7 @@ Checking PostgreSQL connection status
 [Only {fromOnly = "PostgreSQL 13.0 on x86_64-pc-linux-musl, compiled by gcc (Alpine 9.3.0) 9.3.0, 64-bit"}]
 
 ^CClosing PostgreSQL connection
-Shutdown PostgreSQL re-connection process
+Shutdown PostgreSQL reconnection process
 ```
 
-The health check is performed every 3 seconds by default but it is configurable via the `healthCheckEvery` setting. The retries are exponential by `^2` seconds with a threshold of 10 seconds, also configurable via `exponentialThreshold`.
+The health-check is performed every 3 seconds by default but it is configurable via the `healthCheckEvery` setting. The retries are exponential by `^2` seconds with a threshold of 10 seconds, also configurable via `exponentialThreshold`.

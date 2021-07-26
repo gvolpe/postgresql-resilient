@@ -97,7 +97,7 @@ healthCheck logger conn = do
 
 {- | Returns a `ResilientConnection` from which you can always acquire the latest connection available.
  -
- - Re-connections with configurable retries and exponential back-offs as well as closing the connection once done using it (guaranteed by `bracket`) are too handled by this function.
+ - Reconnections with configurable retries and exponential back-offs as well as closing the connection once done using it (guaranteed by `bracket`) are too handled by this function.
  - -}
 withResilientConnection
   :: forall a
@@ -123,7 +123,7 @@ withResilientConnection settings logger info f = do
     logger "Closing PostgreSQL connection"
     conn <- getConnection pool
     P.close conn
-    logger "Shutdown PostgreSQL re-connection process"
+    logger "Shutdown PostgreSQL reconnection process"
     shutdown
 
   clean conn = do
